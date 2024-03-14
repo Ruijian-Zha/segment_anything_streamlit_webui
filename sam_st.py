@@ -222,7 +222,8 @@ def main():
         im = st.file_uploader(label='Upload image',type=['png','jpg','tif'])
         option = st.selectbox(
             'Segmentation mode',
-            ('Click', 'Box', 'Everything'))
+            # ('Click', 'Box', 'Everything'))
+            ('Box',))
         model = st.selectbox(
             'Model',
             ('vit_b', 'vit_l', 'vit_h'))
@@ -237,12 +238,12 @@ def main():
         im              = np.array(im)
         container_width = 700
         scale           = container_width/width
-        if option == 'Click':
-            click(container_width,height,scale,radius_width,show_mask,model,im)
+        # if option == 'Click':
+        #     click(container_width,height,scale,radius_width,show_mask,model,im)
         if option == 'Box':
             box(container_width,height,scale,radius_width,show_mask,model,im)
-        if option == 'Everything':
-            everthing(im,show_mask,model)
+        # if option == 'Everything':
+        #     everthing(im,show_mask,model)
 
         # st.session_state['last_image'] = st.session_state['im']
         if 'cropped_image' in st.session_state:
