@@ -176,6 +176,31 @@ def box(container_width,height,scale,radius_width,show_mask,model,im):
             st.session_state['im'].save(im_bytes,format='PNG')
             st.download_button('Download image',data=im_bytes.getvalue(),file_name='seg.png')
 
+    if 'input_masks_color_box' in st.session_state and st.session_state['input_masks_color_box']:
+        # Get the last box coordinates
+        last_box = st.session_state['input_masks_color_box'][-1][0]
+        if last_box.size != 0:
+            # Ensure last_box has exactly four elements
+
+            # Assuming last_box is a list containing a single array with the coordinates
+            if last_box.ndim == 3:
+                # Flatten the array to 2D
+                mask = last_box[0]
+                # Find the non-zero elements in the mask
+                rows = np.any(mask, axis=1)
+                cols = np.any(mask, axis=0)
+                y1, y2 = np.where(rows)[0][[0, -1]]
+                x1, x2 = np.where(cols)[0][[0, -1]]
+
+                # Crop the image using the bounding box of the mask
+                cropped_im = im.crop((x1, y1, x2, y2))
+                # Save the cropped image in the session state
+                st.session_state['cropped_image'] = cropped_im
+            else:
+                print("Shape of last_box:", last_box.shape)
+                st.error('Error: The last box does not contain four coordinates.')
+
+
 def everthing(im,show_mask,model):
     st.session_state.clear()
     everything = st.image(Image.fromarray(im))
@@ -218,8 +243,18 @@ def main():
             box(container_width,height,scale,radius_width,show_mask,model,im)
         if option == 'Everything':
             everthing(im,show_mask,model)
+
+        # st.session_state['last_image'] = st.session_state['im']
+        if 'cropped_image' in st.session_state:
+            st.image(st.session_state['cropped_image'], caption='Cropped Image')
+
     else:
         st.session_state.clear()
+
+    # Display the latest image at the end if it exists
+    if 'last_image' in st.session_state:
+        st.image(st.session_state['last_image'], caption='Latest Image')
+
 
 if __name__ == '__main__':
     main()
