@@ -9,8 +9,7 @@ import pandas as pd
 import random
 from io import BytesIO
 from util import model_predict_click, model_predict_box, model_predict_everything, show_click, show_everything, get_color
-
-
+import time
 
 def click(container_width,height,scale,radius_width,show_mask,model,im):
     for each in ['color_change_point_box','input_masks_color_box']:
@@ -95,9 +94,10 @@ def click(container_width,height,scale,radius_width,show_mask,model,im):
         st.download_button('Download image',data=im_bytes.getvalue(),file_name='seg.png')
 
 def box(container_width,height,scale,radius_width,show_mask,model,im):
-    for each in ['color_change_point','input_masks_color']:
-        if each in st.session_state:st.session_state.pop(each)
-    
+    for each in ['color_change_point_box', 'input_masks_color_box']:
+        if each in st.session_state and len(st.session_state[each]) > 1:
+            st.session_state[each] = st.session_state[each][-1:]
+        
     canvas_result_1 = st_canvas(
             fill_color="rgba(255, 255, 0, 0)",
             background_image = st.session_state['im'],
@@ -140,8 +140,15 @@ def box(container_width,height,scale,radius_width,show_mask,model,im):
             center_point.append([x+w/2,y+h/2])
             center_label.append([1])
             input_box.append([x,y,x+w,y+h])
+
+        center_point = center_point[-1:]
+        center_label = center_label[-1:]
+        input_box = input_box[-1:]
+
         #masks, scores = model_predict_box(im,center_point,center_label,input_box,model)
         #im_masked = show_click(masks,scores)
+
+        start_time = time.time()  # Start timing before model prediction
         
         if 'color_change_point_box' in st.session_state:
             p = st.session_state['color_change_point_box']
@@ -151,6 +158,12 @@ def box(container_width,height,scale,radius_width,show_mask,model,im):
             masks = model_predict_box(im,center_point[p:],center_label[p:],input_box[p:],model)
         else:
             masks = model_predict_box(im,center_point,center_label,input_box,model)
+
+        end_time = time.time()  # End timing after model prediction
+        time_cost = end_time - start_time  # Calculate the time cost
+
+        st.info(f"Time cost for model prediction: {time_cost:.2f} seconds")
+
         masks = np.array(masks)
         if color_change_point:
             st.session_state['color_change_point_box'] = len(df)
